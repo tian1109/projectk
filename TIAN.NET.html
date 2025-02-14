@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIAN.NET - WiFi Voucher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #1B263B;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin-top: 50px;
+            padding: 20px;
+            background: rgba(27, 38, 59, 0.8);
+            display: inline-block;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            font-size: 26px;
+            color: #e0e1dd;
+        }
+        input, select {
+            width: 80%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00a86b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #008b5e;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: rgba(27, 38, 59, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid white;
+            text-align: center;
+        }
+        th {
+            background: #00a86b;
+        }
+        .message {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+<h1>TIAN.NET - WiFi Voucher</h1>
+
+<table>
+    <tr>
+        <th>Durasi</th>
+        <th>Harga</th>
+    </tr>
+    <tr><td>1 Jam</td><td>Rp2.000</td></tr>
+    <tr><td>2 Jam</td><td>Rp4.000</td></tr>
+    <tr><td>3 Jam</td><td>Rp6.000</td></tr>
+    <tr><td>4 Jam</td><td>Rp8.000</td></tr>
+    <tr><td>5 Jam</td><td>Rp10.000</td></tr>
+</table>
+
+<marquee behavior="scroll" direction="left">SETIAP 1 VOUCHER HANYA BISA DIPAKAI DI 1 PERANGKAT!!</marquee>
+
+<div class="container">
+    <p>Masukkan kode voucher dan pilih durasi WiFi:</p>
+    <input type="text" id="voucherInput" placeholder="Kode Voucher">
+    
+    <select id="waktu">
+        <option value="1">1 Jam - Rp2.000</option>
+        <option value="2">2 Jam - Rp4.000</option>
+        <option value="3">3 Jam - Rp6.000</option>
+        <option value="4">4 Jam - Rp8.000</option>
+        <option value="5">5 Jam - Rp10.000</option>
+    </select>
+
+    <button onclick="cekVoucher()">Login</button>
+
+    <p id="message" class="message"></p>
+</div>
+
+<script>
+    const validVouchers = [
+        "YNZ1", "YNZ2", "YNZ3", "YNZ4", "YNZ5",
+        "YNZ6", "YNZ7", "YNZ8", "YNZ9", "YNZ10",
+        "YNZ11", "YNZ12", "YNZ13", "YNZ14", "YNZ15",
+        "YNZ16", "YNZ17", "YNZ18", "YNZ19", "YNZ20", "TST"
+    ];
+
+    function cekVoucher() {
+        let inputKode = document.getElementById("voucherInput").value.toUpperCase();
+        let waktu = document.getElementById("waktu").value;
+        let harga = waktu * 2000;
+        let message = document.getElementById("message");
+
+        // Cek apakah pengguna sedang diblokir
+        let blokirSampai = localStorage.getItem("blokirSampai");
+        if (blokirSampai && new Date().getTime() < blokirSampai) {
+            let sisaWaktu = Math.ceil((blokirSampai - new Date().getTime()) / 1000);
+            message.style.color = "red";
+            message.innerHTML = `⏳ Anda diblokir! Coba lagi dalam ${sisaWaktu} detik.`;
+            return;
+        }
+
+        let kesalahan = localStorage.getItem("kesalahan") ? parseInt(localStorage.getItem("kesalahan")) : 0;
+
+        if (validVouchers.includes(inputKode)) {
+            localStorage.setItem(inputKode, "used");
+            localStorage.setItem("kesalahan", 0); // Reset kesalahan jika berhasil login
+
+            message.style.color = "lightgreen";
+            message.innerHTML = `✔️ Kode benar! WiFi aktif selama ${waktu} jam (Rp${harga}).`;
+
+            setTimeout(() => { window.location.href = "https://www.google.com"; }, 2000);
+        } else {
+            kesalahan++;
+            localStorage.setItem("kesalahan", kesalahan);
+
+            // Efek getar saat kode salah
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+
+            if (kesalahan >= 5) {
+                let waktuBlokir = new Date().getTime() + 180000; // Blokir 3 menit (180000 ms)
+                localStorage.setItem("blokirSampai", waktuBlokir);
+                localStorage.setItem("kesalahan", 0); // Reset kesalahan setelah diblokir
+
+                message.style.color = "red";
+                message.innerHTML = "🚫 Terlalu banyak percobaan! Anda diblokir selama 3 menit.";
+            } else {
+                message.style.color = "red";
+                message.innerHTML = `❌ Kode salah! Percobaan: ${kesalahan}/5`;
+            }
+        }
+    }
+
+    // Mengupdate pesan blokir jika halaman direfresh
+    setInterval(() => {
+        let blokirSampai = localStorage.getItem("blokirSampai");
+        if (blokirSampai && new Date().getTime() < blokirSampai) {
+            let message = document.getElementById("message");
+            let sisaWaktu = Math.ceil((blokirSampai - new Date().getTime()) / 1000);
+            message.style.color = "red";
+            message.innerHTML = `⏳ Anda diblokir! Coba lagi dalam ${sisaWaktu} detik.`;
+        }
+    }, 1000);
+</script>
+
+</body>
+</html>
